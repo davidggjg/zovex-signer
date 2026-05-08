@@ -10,14 +10,12 @@ kotlin {
 repositories {
     google()
     mavenCentral()
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
     implementation 'com.android.tools.build:apksig:8.9.1'
-    // SpongyCastle — גרסת BouncyCastle שעובדת על אנדרואיד
-    implementation 'com.madgag.spongycastle:core:1.58.0.0'
-    implementation 'com.madgag.spongycastle:pkix:1.58.0.0'
-    implementation 'com.madgag.spongycastle:prov:1.58.0.0'
+    implementation 'com.github.rtyley:spongycastle:sc-v1.58.0.0'
 }
 
 publishing {
@@ -25,7 +23,7 @@ publishing {
         maven(MavenPublication) {
             groupId = 'com.zovex'
             artifactId = 'signer'
-            version = '1.0.2'
+            version = '1.0.3'
             from components.java
         }
     }
