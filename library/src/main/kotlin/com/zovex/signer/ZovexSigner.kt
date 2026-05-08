@@ -1,11 +1,11 @@
 package com.zovex.signer
 
 import com.android.apksig.ApkSigner
-import org.bouncycastle.asn1.x500.X500Name
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter
-import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder
-import org.bouncycastle.jce.provider.BouncyCastleProvider
-import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder
+import org.spongycastle.asn1.x500.X500Name
+import org.spongycastle.cert.jcajce.JcaX509CertificateConverter
+import org.spongycastle.cert.jcajce.JcaX509v3CertificateBuilder
+import org.spongycastle.jce.provider.BouncyCastleProvider
+import org.spongycastle.operator.jcajce.JcaContentSignerBuilder
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
@@ -18,11 +18,11 @@ object ZovexSigner {
 
     private const val KS_ALIAS = "zovex"
     private const val KS_PASS  = "zovex2024"
+    private const val SC       = "SC"
 
-    init {
-        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
-            Security.insertProviderAt(BouncyCastleProvider(), 1)
-        }
+    private val provider: Provider by lazy {
+        Security.getProvider(SC)
+            ?: BouncyCastleProvider().also { Security.insertProviderAt(it, 1) }
     }
 
     fun sign(
@@ -31,6 +31,7 @@ object ZovexSigner {
         keystoreStream: InputStream? = null,
         keystoreOut: OutputStream? = null
     ) {
+        provider // init
         val (key, cert) = if (keystoreStream != null) {
             loadKeyPair(keystoreStream)
         } else {
@@ -39,11 +40,9 @@ object ZovexSigner {
             pair
         }
 
-        val signerConfig = ApkSigner.SignerConfig.Builder(
-            "CERT", key, listOf(cert)
-        ).build()
-
-        ApkSigner.Builder(listOf(signerConfig))
+        ApkSigner.Builder(listOf(
+            ApkSigner.SignerConfig.Builder("CERT", key, listOf(cert)).build()
+        ))
             .setInputApk(unsigned)
             .setOutputApk(out)
             .setV1SigningEnabled(true)
@@ -55,29 +54,31 @@ object ZovexSigner {
     }
 
     fun createKeyPair(): Pair<PrivateKey, X509Certificate> {
-        val kpg = KeyPairGenerator.getInstance("RSA", "BC")
+        val kpg = KeyPairGenerator.getInstance("RSA", provider)
         kpg.initialize(2048, SecureRandom())
-        val kp = kpg.generateKeyPair()
-        val now     = System.currentTimeMillis()
-        val subject = X500Name("CN=ZovexInjector, O=Zovex, C=IL")
-        val certHolder = JcaX509v3CertificateBuilder(
-            subject, BigInteger.valueOf(now),
-            Date(now - 86400_000L),
-            Date(now + 3650L * 86400_000L),
-            subject, kp.public
-        ).build(JcaContentSignerBuilder("SHA256withRSA").setProvider("BC").build(kp.private))
-        val cert = JcaX509CertificateConverter().setProvider("BC").getCertificate(certHolder)
+        val kp  = kpg.generateKeyPair()
+        val now = System.currentTimeMillis()
+        val sub = X500Name("CN=ZovexInjector, O=Zovex, C=IL")
+        val cert = JcaX509CertificateConverter().setProvider(provider)
+            .getCertificate(
+                JcaX509v3CertificateBuilder(
+                    sub, BigInteger.valueOf(now),
+                    Date(now - 86400_000L),
+                    Date(now + 3650L * 86400_000L),
+                    sub, kp.public
+                ).build(JcaContentSignerBuilder("SHA256withRSA").setProvider(provider).build(kp.private))
+            )
         return Pair(kp.private, cert)
     }
 
     fun saveKeyPair(key: PrivateKey, cert: X509Certificate, out: OutputStream) {
-        val ks = KeyStore.getInstance("BKS", "BC").also { it.load(null) }
+        val ks = KeyStore.getInstance("BKS", provider).also { it.load(null) }
         ks.setKeyEntry(KS_ALIAS, key, KS_PASS.toCharArray(), arrayOf(cert))
         ks.store(out, KS_PASS.toCharArray())
     }
 
     fun loadKeyPair(input: InputStream): Pair<PrivateKey, X509Certificate> {
-        val ks = KeyStore.getInstance("BKS", "BC").also {
+        val ks = KeyStore.getInstance("BKS", provider).also {
             it.load(input, KS_PASS.toCharArray())
         }
         return Pair(
