@@ -25,8 +25,13 @@ jobs:
           curl -fL "https://github.com/gradle/gradle/raw/v8.4.0/gradle/wrapper/gradle-wrapper.jar" \
             -o gradle/wrapper/gradle-wrapper.jar
 
-      - name: Make gradlew executable
-        run: chmod +x gradlew
+      - name: Setup gradlew
+        run: |
+          cat > gradlew << 'EOF'
+          #!/bin/sh
+          exec java -cp gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain "$@"
+          EOF
+          chmod +x gradlew
 
       - name: Publish to GitHub Packages
         env:
