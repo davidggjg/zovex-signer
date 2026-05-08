@@ -14,8 +14,10 @@ repositories {
 
 dependencies {
     implementation 'com.android.tools.build:apksig:8.9.1'
-    implementation 'org.bouncycastle:bcprov-jdk15on:1.70'
-    implementation 'org.bouncycastle:bcpkix-jdk15on:1.70'
+    // SpongyCastle — גרסת BouncyCastle שעובדת על אנדרואיד
+    implementation 'com.madgag.spongycastle:core:1.58.0.0'
+    implementation 'com.madgag.spongycastle:pkix:1.58.0.0'
+    implementation 'com.madgag.spongycastle:prov:1.58.0.0'
 }
 
 publishing {
@@ -23,7 +25,7 @@ publishing {
         maven(MavenPublication) {
             groupId = 'com.zovex'
             artifactId = 'signer'
-            version = '1.0.1'
+            version = '1.0.2'
             from components.java
         }
     }
