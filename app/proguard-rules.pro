@@ -1,2 +1,0 @@
--keep class com.groqvoice.assistant.** { *; }
--dontwarn okhttp3.**
