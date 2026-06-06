@@ -21,6 +21,12 @@ dependencies {
 shadowJar {
     relocate 'org.bouncycastle', 'com.zovex.bc'
     relocate 'org.objectweb', 'com.zovex.ow'
+    // אל תכלול kotlin ו-annotations — הם כבר קיימים באפליקציה
+    exclude 'kotlin/**'
+    exclude 'org/jetbrains/**'
+    exclude 'org/intellij/**'
+    exclude 'META-INF/kotlin*'
+    exclude 'META-INF/services/kotlin*'
 }
 
 publishing {
@@ -28,7 +34,7 @@ publishing {
         maven(MavenPublication) {
             groupId = 'com.zovex'
             artifactId = 'signer'
-            version = '3.0.0'
+            version = '3.0.1'
             artifact(tasks.shadowJar) { classifier = null }
         }
     }
