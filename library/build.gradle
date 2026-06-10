@@ -10,23 +10,22 @@ repositories {
     google()
     mavenCentral()
     gradlePluginPortal()
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
     implementation 'com.android.tools.build:apksig:8.9.1'
     implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
     implementation 'org.bouncycastle:bcpkix-jdk18on:1.78.1'
+    implementation 'com.github.iyxan23:zipalign-java:1.1'
 }
 
 shadowJar {
     relocate 'org.bouncycastle', 'com.zovex.bc'
     relocate 'org.objectweb', 'com.zovex.ow'
-    // אל תכלול kotlin ו-annotations — הם כבר קיימים באפליקציה
     exclude 'kotlin/**'
     exclude 'org/jetbrains/**'
-    exclude 'org/intellij/**'
     exclude 'META-INF/kotlin*'
-    exclude 'META-INF/services/kotlin*'
 }
 
 publishing {
@@ -34,7 +33,7 @@ publishing {
         maven(MavenPublication) {
             groupId = 'com.zovex'
             artifactId = 'signer'
-            version = '3.0.1'
+            version = '3.0.2'
             artifact(tasks.shadowJar) { classifier = null }
         }
     }
