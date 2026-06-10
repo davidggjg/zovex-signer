@@ -1,6 +1,7 @@
 package com.zovex.signer
 
 import com.android.apksig.ApkSigner
+import com.iyxan23.zipalignjava.ZipAlign
 import org.bouncycastle.asn1.x500.X500Name
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder
@@ -9,6 +10,7 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
+import java.io.RandomAccessFile
 import java.math.BigInteger
 import java.security.*
 import java.security.cert.X509Certificate
@@ -40,10 +42,19 @@ object ZovexSigner {
             pair
         }
 
+        // חובה: zipalign לפני החתימה
+        val aligned = File(unsigned.parent, "aligned_${unsigned.name}")
+        RandomAccessFile(unsigned, "r").use { raf ->
+            aligned.outputStream().buffered().use { fos ->
+                ZipAlign.alignZip(raf, fos)
+            }
+        }
+
+        // חתימה V1+V2+V3
         ApkSigner.Builder(listOf(
             ApkSigner.SignerConfig.Builder("CERT", key, listOf(cert)).build()
         ))
-            .setInputApk(unsigned)
+            .setInputApk(aligned)
             .setOutputApk(out)
             .setV1SigningEnabled(true)
             .setV2SigningEnabled(true)
@@ -51,6 +62,8 @@ object ZovexSigner {
             .setMinSdkVersion(26)
             .build()
             .sign()
+
+        aligned.delete()
     }
 
     fun createKeyPair(): Pair<PrivateKey, X509Certificate> {
